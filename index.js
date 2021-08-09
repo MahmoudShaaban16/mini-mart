@@ -3,6 +3,16 @@ const app=express();
 const config=require("config");
 const morgan=require("morgan");
 
+// setting up view engine
+
+app.set("view engine","pug");
+app.set("views","./views");
+
+app.get("/home",(req,res)=>{
+
+    res.render("home",{pageTitle:'this is home page',message:'this is a header message'});
+
+});
 var indexDebugger=require("debug")("app");
 var dbDebugger=require("debug")("app:db");
 
@@ -23,6 +33,14 @@ indexDebugger(app.get("env"));
 //console.log(process.env.NODE_ENV);
 
 // openining connection with the mongo db
+const mongoose=require("mongoose");
+
+mongoose.connect(config.get("db.url")).then(()=>{
+
+    dbDebugger("connected to mongodb db successfully");
+}).catch(err=>{dbDebugger("failed to connect to mongodb",err)});
+
+
 
 dbDebugger("connecting to the database");
 var portNumber= config.get("portNumber") ||1122;
