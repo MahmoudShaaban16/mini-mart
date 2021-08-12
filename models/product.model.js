@@ -17,19 +17,47 @@
 
 const mongoose=require("mongoose");
 var productSchema=new mongoose.Schema({
-    name:String,
+    name:{type:String,required:true,trim:true,uppercase:true,
+        validate:{
+            isAsync:true,
+            validator: function(n,callback){
+            console.log('name',n);
+             Product.findOne({name:n}).then(p=>{
+
+                console.log("product from validation",p);
+                if(p)
+                {
+            
+                callback(false);
+                }
+                else  callback(true);
+
+             });
+            
+            },
+            message:"name should be unique"
+        }
+       
+    
+    },
     description:String,
     image:[String],
-    ProductionDate:Date,
-    ExpiryDate:Date,
-    Category:String
+    productionDate:Date,
+    expiryDate:Date,
+    price:{type:Number,min:200,max:10000},
+    category:{type:new mongoose.Schema({
+        name:String
+    }),enum:['milks']}
 });
 
 
 var Product=mongoose.model("product",productSchema);
 
-module.exports=Product;
+function checkIdIsValid(id){
+    return mongoose.Types.ObjectId.isValid(id);
+}
+
+module.exports={Product,checkIdIsValid};
 
 
 
-module.exports=Product;

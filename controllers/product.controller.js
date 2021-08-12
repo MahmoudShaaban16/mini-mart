@@ -1,11 +1,12 @@
 const express = require("express");
-const Product = require("../models/product.model");
+const ProductModel = require("../models/product.model");
 const joi = require("joi");
 const Joi = require("joi");
 const productRouter = express.Router();
-var products = [new Product('lamar milk', "milk.png", "this is a milk", new Date(), new Date(), "Milks")];
+var products = [];
 
-productRouter.get("/", (req, res) => {
+productRouter.get("/", async (req, res) => {
+  var products=await ProductModel.Product.find({category:{$in:['rice','milks']}}).limit(200).sort({name:1,price:-1}).select('name description price category -_id');
   res.send(products);
 })
 
@@ -13,44 +14,105 @@ productRouter.get("/:categorId/:name", (req, res) => {
 
 })
 
-productRouter.get("/:id", (req, res) => {
+productRouter.get("/:id", async (req, res) => {
+
+  //ObjectId
+  var productId = req.params.id;
+  if(ProductModel.checkIdIsValid(productId))
+  {
+  var product = await ProductModel.Product.findById(productId);
+  res.send(product);
+  }
+  else
+  {
+    res.status(400).send(`Invalid value for product id parameter ${productId}`)
+  }
 
 });
 
-productRouter.post("/", (req, res) => {
+productRouter.post("/", async (req, res) => {
 
-  var productSchema = joi.object({
-    name: joi.string().required().min(5).max(20),
-    image: joi.string().required(),
-    description: joi.string(),
-    productionDate: joi.date().required(),
-    expiryDate: joi.date().required(),
-    category: joi.string().required()
+  var product=req.body;
+  // var productSchema = joi.object({
+  //   name: joi.string().required().min(5).max(20),
+  //   image: joi.string().required(),
+  //   description: joi.string(),
+  //   productionDate: joi.date().required(),
+  //   expiryDate: joi.date().required(),
+  //   category: joi.string().required(),
+  //   price:joi.number().required()
 
+  // });
 
-  });
+  // var product = req.body;
+  // var validationResult = productSchema.validate(product);
+  // console.log(validationResult);
+  // 
+  
+    // I can constructor to fill model data
+    var newProduct=new ProductModel.Product();
+    newProduct.name=product.name;
+    newProduct.description=product.description;
+    newProduct.image=product.image;
+    newProduct.productionDate=product.productionDate;
+    newProduct.expiryDate=product.expiryDate;
+    newProduct.category=product.category;
+    newProduct.price=product.price;
+    try{
 
-  var product = req.body;
-  var validationResult = productSchema.validate(product);
-  console.log(validationResult);
-  if (validationResult.error) {
+    const addedProduct=await newProduct.save();
 
-    res.status(400).send(validationResult.error.details[0].message);
-  }
-  else {
-    res.send(product);
-  }
+    res.send(addedProduct);
+    }
+    catch(err){
+      res.status(400).send(err);
+    }
+  
 
 
 
 
 });
 
-productRouter.put("/:id", (req, res) => {
+productRouter.put("/:id", async(req, res) => {
+
+  // update by finding the documents first
+if(ProductModel.checkIdIsValid(req.params.id)){
+  
+  var result=await ProductModel.Product.findByIdAndUpdate(req.params.id,{$set:{
+  
+    price:req.body.price
+
+  }},{new:false});
+  console.log(result);
+  res.send(result);
+  // var productToBeUpdated=await ProductModel.Product.findById(req.params.id);
+  // if(productToBeUpdated!=null){
+  //   var product=req.body;
+  //   productToBeUpdated.price=product.price;
+  //   productToBeUpdated.image=product.image;
+  //   var productUpdated=await productToBeUpdated.save();
+  //   res.send(productUpdated);
+  // }
+
+}
+else
+{
+  res.status(400).send("invalid product Id")
+}
+ 
+ 
+
+
 
 })
 
-productRouter.delete("/:id", (req, res) => {
+productRouter.delete("/:id", async (req, res) => { 
+
+  //var result=await ProductModel.Product.deleteMany({price:{$lte:500}});
+  var result=await ProductModel.Product.findByIdAndDelete(req.params.id);
+  res.status(200).send(result);
+
 
 });
 
