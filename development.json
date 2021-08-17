@@ -1,0 +1,8 @@
+{
+    "portNumber":1156,
+    "db":
+    {
+        "url":"mongodb://localhost:27017/miniMart"
+    }
+    
+}
